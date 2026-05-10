@@ -13,6 +13,8 @@ func setupSystemTray(
 	w fyne.Window,
 	showPopup func(reason string),
 	notify func(title, content string),
+	showTodo func(),
+	hideTodo func(),
 ) {
 	desk, ok := a.(desktop.App)
 	if !ok {
@@ -46,6 +48,12 @@ func setupSystemTray(
 		menu := fyne.NewMenu("Tiny Worklog",
 			fyne.NewMenuItem("Quick drop", func() {
 				showPopup("Manual drop")
+			}),
+			fyne.NewMenuItem("Show todo widget", func() {
+				showTodo()
+			}),
+			fyne.NewMenuItem("Hide todo widget", func() {
+				hideTodo()
 			}),
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem("Open current month log", func() {
@@ -109,6 +117,7 @@ func setupSystemTray(
 
 		desk.SetSystemTrayMenu(menu)
 		desk.SetSystemTrayWindow(w)
+		desk.SetSystemTrayIcon(appIconResource())
 	}
 
 	refreshMenu()
