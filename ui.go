@@ -22,8 +22,10 @@ type tinyWorklogApp struct {
 
 func newTinyWorklogApp() *tinyWorklogApp {
 	a := app.NewWithID(appID)
+	a.SetIcon(appIconResource())
 
 	w := a.NewWindow(appTitle)
+	w.SetIcon(appIconResource())
 	w.Resize(fyne.NewSize(windowWidth, windowHeight))
 	w.SetFixedSize(true)
 	w.CenterOnScreen()
@@ -41,6 +43,8 @@ func newTinyWorklogApp() *tinyWorklogApp {
 		input:   input,
 		status:  status,
 	}
+
+	todoWidget := newTodoWidget(a, worklog.notify)
 
 	title := widget.NewLabel("Drop your work update real quick.")
 
@@ -72,7 +76,14 @@ func newTinyWorklogApp() *tinyWorklogApp {
 		worklog.hidePopup()
 	})
 
-	setupSystemTray(a, w, worklog.showPopup, worklog.notify)
+	setupSystemTray(
+		a,
+		w,
+		worklog.showPopup,
+		worklog.notify,
+		todoWidget.Show,
+		todoWidget.Hide,
+	)
 
 	startScheduler(reminderTimes, func(targetTime string) {
 		fyne.Do(func() {
@@ -90,7 +101,7 @@ func (t *tinyWorklogApp) Run() {
 
 func (t *tinyWorklogApp) showPopup(reason string) {
 	playPopupSFX()
-	
+
 	t.input.SetText("")
 	t.status.SetText(reason)
 

@@ -8,6 +8,10 @@ const (
 	windowHeight = 340
 
 	autoStartName = "TinyWorklog"
+
+	todoFileName     = "todo.json"
+	todoWindowWidth  = 340
+	todoWindowHeight = 440
 )
 
 var reminderTimes = []string{
