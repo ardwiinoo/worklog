@@ -45,6 +45,7 @@ func newTinyWorklogApp() *tinyWorklogApp {
 	}
 
 	todoWidget := newTodoWidget(a, worklog.notify)
+	calendarWidget := newCalendarWidget(a, worklog.notify)
 
 	title := widget.NewLabel("Drop your work update real quick.")
 
@@ -83,6 +84,8 @@ func newTinyWorklogApp() *tinyWorklogApp {
 		worklog.notify,
 		todoWidget.Show,
 		todoWidget.Hide,
+		calendarWidget.Show,
+		calendarWidget.Hide,
 	)
 
 	startScheduler(reminderTimes, func(targetTime string) {
