@@ -112,7 +112,7 @@ func insertBullets(content, dateHeader string, bullets []string) string {
 	return strings.TrimRight(strings.Join(newLines, "\n"), "\n") + "\n"
 }
 
-func ensureCurrentMonthLog(now time.Time) (string, error) {
+func ensureMonthLog(month time.Time) (string, error) {
 	logDir, err := getLogDir()
 	if err != nil {
 		return "", err
@@ -122,7 +122,7 @@ func ensureCurrentMonthLog(now time.Time) (string, error) {
 		return "", err
 	}
 
-	fileName := now.Format("200601") + "_daily.txt"
+	fileName := month.Format("200601") + "_daily.txt"
 	filePath := filepath.Join(logDir, fileName)
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -132,4 +132,8 @@ func ensureCurrentMonthLog(now time.Time) (string, error) {
 	}
 
 	return filePath, nil
+}
+
+func ensureCurrentMonthLog(now time.Time) (string, error) {
+	return ensureMonthLog(now)
 }
