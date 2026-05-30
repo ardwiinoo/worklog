@@ -12,6 +12,9 @@ const (
 	todoFileName     = "todo.json"
 	todoWindowWidth  = 340
 	todoWindowHeight = 440
+
+	calendarWindowWidth  = 460
+	calendarWindowHeight = 440
 )
 
 var reminderTimes = []string{
