@@ -15,6 +15,8 @@ func setupSystemTray(
 	notify func(title, content string),
 	showTodo func(),
 	hideTodo func(),
+	showCalendar func(),
+	hideCalendar func(),
 ) {
 	desk, ok := a.(desktop.App)
 	if !ok {
@@ -54,6 +56,12 @@ func setupSystemTray(
 			}),
 			fyne.NewMenuItem("Hide todo widget", func() {
 				hideTodo()
+			}),
+			fyne.NewMenuItem("Show calendar", func() {
+				showCalendar()
+			}),
+			fyne.NewMenuItem("Hide calendar", func() {
+				hideCalendar()
 			}),
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem("Open current month log", func() {
