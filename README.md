@@ -2,7 +2,7 @@
 
 Tiny Worklog is a lightweight desktop app for quickly writing daily work updates, tracking short-term todo items, and reviewing monthly worklog coverage from a simple calendar view.
 
-It is built for personal daily logging with a local-first approach. No account, no cloud sync, no database.
+It is built for personal daily logging with a local-first approach. No database, no forced accounts. It operates 100% locally with an optional, seamless GitHub Cloud Sync for multi-device access.
 
 ![Tiny Worklog preview](docs/tiny-worklog-v0.5.0.png)
 
@@ -17,6 +17,9 @@ After downloading, run the `.exe` file directly. Tiny Worklog stores its local f
 * Quick worklog popup for fast daily updates
 * Scheduled reminders for worklog check-ins
 * Monthly text file storage using `YYYYMM_daily.txt`
+* Optional background GitHub synchronization (Local-First)
+* Sync Console window to monitor background activities
+* Clickable calendar dates to view, edit, or delete past worklogs
 * System tray menu for quick actions
 * Open current month log directly from the tray
 * Open logs folder directly from the tray
@@ -51,6 +54,23 @@ logs/
   202606_daily.txt
 
 todo.json
+github_token.txt (optional)
+```
+
+## GitHub Cloud Sync (Optional)
+
+Tiny Worklog supports seamless, background synchronization to a private GitHub repository.
+
+1. Create a private GitHub repository (e.g., `my-worklog`).
+2. Generate a Fine-grained Personal Access Token with "Read and write" permissions for "Contents" on that repository.
+3. Create a `github_token.txt` file next to the `.exe` with the following format:
+   ```text
+   <your-personal-access-token>
+   <your-username>/<your-repo-name>
+   ```
+4. The app will automatically pull logs on startup and push logs every time you save or edit an entry.
+5. If the file is missing, the app continues to work 100% locally without errors.
+
 ```
 
 ## Calendar indicators
@@ -72,7 +92,7 @@ Build Windows executable:
 
 ```bash
 mkdir -p dist
-go build -trimpath -ldflags="-s -w -H windowsgui" -o dist/worklog-windows-amd64-v0.5.0.exe .
+go build -trimpath -ldflags="-s -w -H windowsgui" -o dist/worklog-windows-amd64-v0.5.3.exe .
 ```
 
 ## Tech stack
