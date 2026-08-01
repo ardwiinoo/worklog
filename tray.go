@@ -17,6 +17,8 @@ func setupSystemTray(
 	hideTodo func(),
 	showCalendar func(),
 	hideCalendar func(),
+	showConsole func(),
+	hideConsole func(),
 ) {
 	desk, ok := a.(desktop.App)
 	if !ok {
@@ -63,8 +65,15 @@ func setupSystemTray(
 			fyne.NewMenuItem("Hide calendar", func() {
 				hideCalendar()
 			}),
+			fyne.NewMenuItem("Show sync console", func() {
+				showConsole()
+			}),
+			fyne.NewMenuItem("Hide sync console", func() {
+				hideConsole()
+			}),
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem("Open current month log", func() {
+				LogToConsole("User requested to open current month log.")
 				path, err := ensureCurrentMonthLog(time.Now())
 				if err != nil {
 					notify("Tiny Worklog", "Could not open current month log.")
@@ -77,6 +86,7 @@ func setupSystemTray(
 				}
 			}),
 			fyne.NewMenuItem("Open logs folder", func() {
+				LogToConsole("User requested to open logs folder.")
 				logDir, err := getLogDir()
 				if err != nil {
 					notify("Tiny Worklog", "Could not find logs folder.")
@@ -96,29 +106,35 @@ func setupSystemTray(
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem(enableLabel, func() {
 				if err := setAutoStart(true); err != nil {
+					LogToConsole("Failed to enable auto-start: %v", err)
 					notify("Tiny Worklog", "Could not enable auto-start.")
 					return
 				}
 
+				LogToConsole("Auto-start successfully enabled.")
 				notify("Tiny Worklog", "Auto-start enabled.")
 				refreshMenu()
 			}),
 			fyne.NewMenuItem(disableLabel, func() {
 				if err := setAutoStart(false); err != nil {
+					LogToConsole("Failed to disable auto-start: %v", err)
 					notify("Tiny Worklog", "Could not disable auto-start.")
 					return
 				}
 
+				LogToConsole("Auto-start successfully disabled.")
 				notify("Tiny Worklog", "Auto-start disabled.")
 				refreshMenu()
 			}),
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem("Quit and disable auto-start", func() {
 				if err := setAutoStart(false); err != nil {
+					LogToConsole("Failed to disable auto-start before quit: %v", err)
 					notify("Tiny Worklog", "Could not disable auto-start.")
 					return
 				}
 
+				LogToConsole("Auto-start disabled. Quitting app.")
 				quitAfterNotify("Tiny Worklog", "Auto-start disabled. Quitting app.")
 			}),
 		)

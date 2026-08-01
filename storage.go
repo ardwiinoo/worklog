@@ -42,11 +42,19 @@ func saveWorkLog(rawInput string, now time.Time) error {
 
 	if strings.TrimSpace(content) == "" {
 		newContent := dateHeader + "\n" + strings.Join(bullets, "\n") + "\n"
-		return os.WriteFile(filePath, []byte(newContent), 0644)
+		err := os.WriteFile(filePath, []byte(newContent), 0644)
+		if err == nil {
+			go PushToGitHub(now)
+		}
+		return err
 	}
 
 	newContent := insertBullets(content, dateHeader, bullets)
-	return os.WriteFile(filePath, []byte(newContent), 0644)
+	err = os.WriteFile(filePath, []byte(newContent), 0644)
+	if err == nil {
+		go PushToGitHub(now)
+	}
+	return err
 }
 
 func normalizeEntries(rawInput string) []string {
@@ -136,4 +144,129 @@ func ensureMonthLog(month time.Time) (string, error) {
 
 func ensureCurrentMonthLog(now time.Time) (string, error) {
 	return ensureMonthLog(now)
+}
+
+func getRawDayLog(date time.Time) (string, error) {
+	logDir, err := getLogDir()
+	if err != nil {
+		return "", err
+	}
+
+	fileName := date.Format("200601") + "_daily.txt"
+	filePath := filepath.Join(logDir, fileName)
+
+	contentBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	content := strings.ReplaceAll(string(contentBytes), "\r\n", "\n")
+	lines := strings.Split(content, "\n")
+	dateHeader := date.Format("02/01/2006")
+	dateRegex := regexp.MustCompile(`^\d{2}/\d{2}/\d{4}\s*$`)
+
+	var bullets []string
+	inDateBlock := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		
+		if dateRegex.MatchString(trimmed) {
+			if trimmed == dateHeader {
+				inDateBlock = true
+				continue
+			} else if inDateBlock {
+				break
+			}
+		}
+
+		if inDateBlock {
+			if strings.HasPrefix(trimmed, "*") {
+				bullets = append(bullets, strings.TrimSpace(strings.TrimPrefix(trimmed, "*")))
+			}
+		}
+	}
+
+	return strings.Join(bullets, "\n"), nil
+}
+
+func replaceDayLog(date time.Time, rawInput string) error {
+	logDir, err := getLogDir()
+	if err != nil {
+		return err
+	}
+
+	fileName := date.Format("200601") + "_daily.txt"
+	filePath := filepath.Join(logDir, fileName)
+
+	contentBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if strings.TrimSpace(rawInput) != "" {
+				return saveWorkLog(rawInput, date)
+			}
+			return nil
+		}
+		return err
+	}
+
+	content := strings.ReplaceAll(string(contentBytes), "\r\n", "\n")
+	lines := strings.Split(content, "\n")
+	dateHeader := date.Format("02/01/2006")
+	dateRegex := regexp.MustCompile(`^\d{2}/\d{2}/\d{4}\s*$`)
+
+	dateIndex := -1
+	nextDateIndex := len(lines)
+
+	for i, line := range lines {
+		if strings.TrimSpace(line) == dateHeader {
+			dateIndex = i
+			break
+		}
+	}
+
+	if dateIndex == -1 {
+		if strings.TrimSpace(rawInput) != "" {
+			return saveWorkLog(rawInput, date)
+		}
+		return nil
+	}
+
+	for i := dateIndex + 1; i < len(lines); i++ {
+		if dateRegex.MatchString(strings.TrimSpace(lines[i])) {
+			nextDateIndex = i
+			break
+		}
+	}
+
+	entries := normalizeEntries(rawInput)
+	var newBullets []string
+	for _, entry := range entries {
+		newBullets = append(newBullets, "* "+entry)
+	}
+
+	newLines := make([]string, 0, len(lines))
+	newLines = append(newLines, lines[:dateIndex]...)
+
+	if len(newBullets) > 0 {
+		newLines = append(newLines, dateHeader)
+		newLines = append(newLines, newBullets...)
+		newLines = append(newLines, "") // Add a blank line for spacing
+	}
+
+	newLines = append(newLines, lines[nextDateIndex:]...)
+
+	finalContent := strings.TrimSpace(strings.Join(newLines, "\n"))
+	if finalContent != "" {
+		finalContent += "\n"
+	}
+	
+	err = os.WriteFile(filePath, []byte(finalContent), 0644)
+	if err == nil {
+		go PushToGitHub(date)
+	}
+	return err
 }

@@ -10,6 +10,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -183,6 +184,7 @@ func (c *CalendarWidget) refresh() error {
 
 		btn := widget.NewButton(fmt.Sprintf("%d\n%s", cell.Day, statusIcon), func() {
 			c.setDayStatus(clickedDate, clickedHasLog, clickedIsWeekend, clickedIsFuture, clickedIsToday)
+			c.showEditDialog(clickedDate)
 		})
 
 		c.grid.Add(btn)
@@ -214,6 +216,52 @@ func (c *CalendarWidget) setDayStatus(date time.Time, hasLog bool, isWeekend boo
 	default:
 		c.status.SetText(formatted + " has no worklog yet.")
 	}
+}
+
+func (c *CalendarWidget) showEditDialog(date time.Time) {
+	rawLog, err := getRawDayLog(date)
+	if err != nil {
+		c.notify("Tiny Worklog", "Could not load log for this date.")
+		return
+	}
+
+	editInput := widget.NewMultiLineEntry()
+	editInput.SetText(rawLog)
+	editInput.SetPlaceHolder("Enter worklog for " + date.Format("02 Jan 2006") + "...\nLeave empty to delete.")
+	editInput.Wrapping = fyne.TextWrapWord
+	editInput.SetMinRowsVisible(8)
+
+	inputBox := container.NewGridWrap(
+		fyne.NewSize(380, 200),
+		editInput,
+	)
+
+	title := widget.NewLabel(fmt.Sprintf("Edit Log: %s", date.Format("Mon, 02 Jan 2006")))
+	content := container.NewVBox(title, inputBox)
+
+	d := dialog.NewCustomConfirm(
+		"Edit Worklog",
+		"Save Changes",
+		"Cancel",
+		content,
+		func(confirm bool) {
+			if !confirm {
+				return
+			}
+
+			if err := replaceDayLog(date, editInput.Text); err != nil {
+				c.notify("Tiny Worklog", "Failed to save log.")
+			} else {
+				c.notify("Tiny Worklog", "Log updated successfully.")
+				c.refresh()
+			}
+		},
+		c.window,
+	)
+
+	d.Resize(fyne.NewSize(420, 300))
+	d.Show()
+	c.window.Canvas().Focus(editInput)
 }
 
 func currentMonthStart() time.Time {
