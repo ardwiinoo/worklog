@@ -46,6 +46,8 @@ func newTinyWorklogApp() *tinyWorklogApp {
 
 	todoWidget := newTodoWidget(a, worklog.notify)
 	calendarWidget := newCalendarWidget(a, worklog.notify)
+	consoleWidget := initConsoleWidget(a)
+	LogToConsole("Tiny Worklog App initialized.")
 
 	title := widget.NewLabel("Drop your work update real quick.")
 
@@ -53,6 +55,7 @@ func newTinyWorklogApp() *tinyWorklogApp {
 	saveBtn.Importance = widget.HighImportance
 
 	skipBtn := widget.NewButton("Not now", func() {
+		LogToConsole("User skipped the prompt.")
 		worklog.notify("Skipped for now", "No worries. Catch the next check-in.")
 		worklog.hidePopup()
 	})
@@ -86,6 +89,8 @@ func newTinyWorklogApp() *tinyWorklogApp {
 		todoWidget.Hide,
 		calendarWidget.Show,
 		calendarWidget.Hide,
+		consoleWidget.Show,
+		consoleWidget.Hide,
 	)
 
 	startScheduler(reminderTimes, func(targetTime string) {
@@ -93,6 +98,8 @@ func newTinyWorklogApp() *tinyWorklogApp {
 			worklog.showPopup("It's " + targetTime + " - quick work dump?")
 		})
 	})
+
+	go PullFromGitHub(time.Now())
 
 	return worklog
 }
@@ -142,10 +149,13 @@ func (t *tinyWorklogApp) saveInput() {
 	}
 
 	if err := saveWorkLog(text, time.Now()); err != nil {
+		LogToConsole("Failed to save worklog locally: %v", err)
 		dialog.ShowError(err, t.window)
 		t.notify("Tiny Worklog", "Couldn't save that. Try again?")
 		return
 	}
+
+	LogToConsole("Saved %d new entries locally.", len(entries))
 
 	t.status.SetText("Logged at " + time.Now().Format("15:04"))
 	t.notify("Logged. Nice.", fmt.Sprintf("%d update(s) saved.", len(entries)))
